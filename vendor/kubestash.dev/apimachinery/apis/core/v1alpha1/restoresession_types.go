@@ -33,7 +33,6 @@ const (
 // +kubebuilder:subresource:status
 // +kubebuilder:resource:path=restoresessions,singular=restoresession,shortName=restore,categories={kubestash,appscode,all}
 // +kubebuilder:printcolumn:name="Repository",type="string",JSONPath=".spec.dataSource.repository"
-// +kubebuilder:printcolumn:name="Failure-Policy",type="string",JSONPath=".spec.failurePolicy"
 // +kubebuilder:printcolumn:name="Phase",type="string",JSONPath=".status.phase"
 // +kubebuilder:printcolumn:name="Duration",type="string",JSONPath=".status.duration"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
@@ -50,7 +49,6 @@ type RestoreSession struct {
 // RestoreSessionSpec specifies the necessary configurations for restoring data into a target
 type RestoreSessionSpec struct {
 	// Target indicates the target application where the data will be restored.
-	// The target must be in the same namespace as the RestoreSession CR.
 	// +optional
 	Target *kmapi.TypedObjectReference `json:"target,omitempty"`
 
@@ -114,6 +112,38 @@ type ManifestRestoreOptions struct {
 	// Redis specifies the options for selecting particular Redis components to restore in manifest restore
 	// +optional
 	Redis *KubeDBManifestOptions `json:"redis,omitempty"`
+
+	// RedisSentinel specifies the options for selecting particular RedisSentinel components to restore in manifest restore
+	// +optional
+	RedisSentinel *RedisSentinelManifestOptions `json:"redisSentinel,omitempty"`
+}
+
+type RedisSentinelManifestOptions struct {
+	// RestoreNamespace specifies the Namespace where the restored files will be applied
+	// +optional
+	RestoreNamespace string `json:"restoreNamespace,omitempty"`
+
+	// Sentinel specifies whether to restore the Sentinel manifest or not
+	// +kubebuilder:default=true
+	// +optional
+	Sentinel *bool `json:"sentinel,omitempty"`
+
+	// SentinelName specifies the new name of the Sentinel yaml after restore
+	// +optional
+	SentinelName string `json:"SentinelName,omitempty"`
+
+	// AuthSecret specifies whether to restore the AuthSecret manifest or not
+	// +kubebuilder:default=true
+	// +optional
+	AuthSecret *bool `json:"authSecret,omitempty"`
+
+	// AuthSecretName specifies new name of the AuthSecret yaml after restore
+	// +optional
+	AuthSecretName string `json:"authSecretName,omitempty"`
+
+	// TLSIssuerRef specifies the name of the IssuerRef used for TLS configurations for both client and server
+	// +optional
+	TLSIssuerRef *core.TypedLocalObjectReference `json:"tlsIssuerRef,omitempty"`
 }
 
 type WorkloadManifestOptions struct {
@@ -145,9 +175,19 @@ type MSSQLServerManifestOptions struct {
 	// +optional
 	AuthSecretName string `json:"authSecretName,omitempty"`
 
-	// InternalAuthIssuerRef specifies the name of the IssuerRef used for endpoint authentication.
+	// InitScript specifies whether to restore the InitScript manifest or not
+	// +kubebuilder:default=true
 	// +optional
-	InternalAuthIssuerRef *core.TypedLocalObjectReference `json:"internalAuthIssuerRef,omitempty"`
+	InitScript *bool `json:"initScript,omitempty"`
+
+	// Archiver specifies whether to restore the Archiver manifest or not
+	// +kubebuilder:default=false
+	// +optional
+	Archiver *bool `json:"archiver,omitempty"`
+
+	// ArchiverRef specifies the new name and namespace of the Archiver yaml after restore
+	// +optional
+	ArchiverRef *kmapi.ObjectReference `json:"archiverRef,omitempty"`
 
 	// TLSIssuerRef specifies the name of the IssuerRef used for TLS configurations for both client and server.
 	// +optional
@@ -214,6 +254,15 @@ type KubeDBManifestOptions struct {
 	// AuthSecretName specifies new name of the AuthSecret yaml after restore
 	// +optional
 	AuthSecretName string `json:"authSecretName,omitempty"`
+
+	// Archiver specifies whether to restore the Archiver manifest or not
+	// +kubebuilder:default=false
+	// +optional
+	Archiver *bool `json:"archiver,omitempty"`
+
+	// ArchiverRef specifies the new name and namespace of the Archiver yaml after restore
+	// +optional
+	ArchiverRef *kmapi.ObjectReference `json:"archiverRef,omitempty"`
 
 	// ConfigSecret specifies whether to restore the ConfigSecret manifest or not
 	// +kubebuilder:default=true
